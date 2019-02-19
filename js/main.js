@@ -64,7 +64,7 @@ function formatData() {
     let list = cache_data.raw,
         min =  +d3.min(list),
         max = +d3.max(list),
-        bin_size = (max + 1 - min)/(bin_count);
+        bin_size = (max + max/100 - min)/(bin_count);
 
     cache_data.bins = [];
     for(let i=0; i< bin_count; ++i) {
@@ -74,8 +74,7 @@ function formatData() {
     for(let i =0; i< list.length; ++i) { // dividing data into bins
         let d = list[i], bin_id = Math.floor((d - min) / bin_size);
         cache_data.bins[bin_id]['freq']++;
-    };
-
+    }
 
     cache_data.domainX = [];
     for(let i =0; i< cache_data.bins.length; ++i) {
@@ -100,41 +99,7 @@ function loadData(property ='') {
         });
 
         cache_data['raw'] = list;
-
         formatData();
-
-        // let min =  +d3.min(list), max = +d3.max(list);
-        // let bin_size = (max + 1 - min)/(bin_count);
-        //
-        // let bins = [];
-        // for(let i=0; i< bin_count; ++i) {
-        //     bins.push(Object.create({'bin': '', 'freq': 0}));
-        // }
-        //
-        // list.forEach(function(d) { // dividing data into bins
-        //         let bin_id = Math.floor((d - min) / bin_size);
-        //         bins[bin_id]['freq']++;
-        // });
-        //
-        // let domainX = [];
-        // bins.forEach((bin) => {
-        //     let rhs = (+min + +bin_size).toFixed(0);
-        //     bin['bin'] = `[${min}-${rhs}]`;
-        //     min = rhs;
-        //     domainX.push(bin.bin);
-        // });
-
-        // for(let count in counts) {
-        //     let bin = Math.floor((count - min)/binsize);
-        //     bins[bin] += counts[count];
-        // }
-
-        // cache_data = {
-        //     'domainX': domainX,
-        //     'domainY': [0, +d3.max(bins.map(bin => bin.freq)) * 1.1],
-        //     'bins': bins,
-        //     'raw': list
-        // }
         plotChart(cache_data.domainX, cache_data.domainY, cache_data.bins);
     });
 }
@@ -247,32 +212,7 @@ function plotPieChart(domainX, domainY, bins) {
         })
         .text( d => d.data.freq );
 
-    // let legend = d3.select("svg")
-    //     .append('div')
-    //     .attr('class', 'legend')
-    //     .style('margin-top', '30px');
-    //
-    // let keys = legend.selectAll('.key')
-    //     .data(bins)
-    //     .enter()
-    //     .append('div')
-    //     .attr('class', 'key')
-    //     .style('display', 'flex')
-    //     .style('align-items', 'center')
-    //     .style('margin-right', '20px');
-    //
-    // keys.append('div')
-    //     .attr('class', 'symbol')
-    //     .style('height', '10px')
-    //     .style('width', '10px')
-    //     .style('margin', '5px 5px')
-    //     .style('background-color', (d, i) => color(i));
-    //
-    // keys.append('div')
-    //     .attr('class', 'name')
-    //     .text(bin => `${bin.bin} (${bin.freq})`);
 
-    // keys.exit().remove();
 
     var legendG = d3.select('#chart').selectAll(".legend") // note appending it to mySvg and not svg to make positioning easier
         .data(pie(bins))
