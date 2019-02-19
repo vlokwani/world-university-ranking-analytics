@@ -1,6 +1,9 @@
 let bin_count = def_bincount,
     plotChart = plotBarChart,
     current_property = properties[0].property,
+    xlabel = properties[0].x_label,
+    ylabel = properties[0].y_label,
+    gtitle = properties[0].title,
     cache_data = {'domainX': [], 'domainY': [], 'bins': [], 'raw': []};
 
 $(function() {
@@ -11,19 +14,31 @@ $(function() {
         .attr('transform', `translate(${margin},${margin})`);
 
     // Load data and plot chart
-    loadData(current_property);
+    loadData(current_property, xlabel, ylabel, gtitle);
 
     // constructing the navigation menu
     makeMenu($('nav'));
 
     $('nav a').on('click', {canvas: chart}, function(e) {
         e.data.canvas.selectAll('*').remove(); // prep for new chart
+        d3.selectAll('.labels').remove(); // remove the labels as well which we added
+        d3.select('.title').remove();
+
         current_property = $(this).data('property');
-        loadData(current_property);
+        properties.forEach((prop) => {
+            if (current_property === prop.property) {
+                xlabel = prop.x_label;
+                ylabel = prop.y_label;
+                gtitle = prop.title;
+            }
+        });
+        loadData(current_property, xlabel, ylabel, gtitle);
     });
 
     $('svg').on('click', {canvas: chart}, function(e) {
         e.data.canvas.selectAll('*').remove(); // prep for new chart
+        d3.selectAll('.labels').remove(); // remove the labels as well which we added
+        d3.select('.title').remove();
 
         if( plotChart === plotBarChart) {
             plotChart = plotPieChart;
@@ -31,16 +46,30 @@ $(function() {
             plotChart = plotBarChart;
         }
 
-        plotChart(cache_data.domainX, cache_data.domainY, cache_data.bins);
+        plotChart(cache_data.domainX,
+            cache_data.domainY,
+            cache_data.bins,
+            cache_data.x_label,
+            cache_data.y_label,
+            cache_data.title
+        );
 
     });
 
     $('input.slider').on('input', {canvas: chart}, function(e) {
         e.data.canvas.selectAll('*').remove();
+        d3.selectAll('.labels').remove(); // remove the labels as well which we added
+        d3.select('.title').remove();
         bin_count = $(this).val();
 
         formatData();
-        plotChart(cache_data.domainX, cache_data.domainY, cache_data.bins)
+        plotChart(cache_data.domainX,
+            cache_data.domainY,
+            cache_data.bins,
+            cache_data.x_label,
+            cache_data.y_label,
+            cache_data.title
+        );
     })
 
 });
@@ -88,7 +117,7 @@ function formatData() {
     cache_data['domainY'] = [0, +d3.max(cache_data.bins.map(bin => bin.freq)) * 1.1];
 }
 
-function loadData(property ='') {
+function loadData(property ='', x_label= '', y_label='', title = '') {
     d3.csv(data_file, function(data) {
         let list = [];                  // house property data list
 
@@ -99,12 +128,21 @@ function loadData(property ='') {
         });
 
         cache_data['raw'] = list;
+        cache_data['x_label'] = x_label;
+        cache_data['y_label'] = y_label;
+        cache_data['title'] = title;
         formatData();
-        plotChart(cache_data.domainX, cache_data.domainY, cache_data.bins);
+        plotChart(cache_data.domainX,
+            cache_data.domainY,
+            cache_data.bins,
+            cache_data.x_label,
+            cache_data.y_label,
+            cache_data.title
+        );
     });
 }
 
-function plotBarChart(domainX, domainY, bins) {
+function plotBarChart(domainX, domainY, bins, x_label, y_label, title) {
         /*
             :input:         bins, domainX, domainY
             :input type:    bin: array of objects, each object has two attributes/keys
@@ -115,7 +153,8 @@ function plotBarChart(domainX, domainY, bins) {
                             domainY: array defining the domain to which y-axis will
                             translate
          */
-        let chart = d3.select('#chart');
+        const chart = d3.select('#chart'),
+                svg = d3.select('svg');
         yScale.range([height, 0]).domain(domainY);
         xScale.range([0, width]).domain(domainX).padding(0.2);
 
@@ -151,16 +190,41 @@ function plotBarChart(domainX, domainY, bins) {
         chart.selectAll('rect')
             .on('mouseover', highlightBar)
             .on('mouseout', revertHighlight);
+
+        // label for y-axis
+        svg.append('text')
+            .attr('x', -(height / 2) - margin)
+            .attr('y', margin / 3.4)
+            .attr('transform', 'rotate(-90)')
+            .attr('text-anchor', 'middle')
+            .attr('class', 'labels')
+            .text(y_label);
+
+        // title
+        svg.append('text')
+            .attr('x', width / 2 + margin)
+            .attr('y', 40)
+            .attr('text-anchor', 'middle')
+            .attr('class', 'title')
+            .text(title);
+
+        // label for x-axis
+        svg.append('text')
+            .attr('x', width / 2 + margin)
+            .attr('y', 2*margin + height - 10) // - the overflow
+            .attr('text-anchor', 'middle')
+            .attr('class', 'labels')
+            .text(x_label);
 }
 
-function plotPieChart(domainX, domainY, bins) {
+function plotPieChart(domainX, domainY, bins, x_label, y_label, title) {
 
     let radius = Math.min(width, height) /2, // radius
         piechart = d3.select('#chart')
                     .append('g')
-                    .attr('transform', `translate(${width/2},${height/2})`);
+                    .attr('transform', `translate(${width/2 - 25},${height/2 + 25})`);
 
-    let color = d3.scaleOrdinal(d3.schemeCategory20),
+    let color = d3.scaleOrdinal(d3.schemeCategory20c),
         pie = d3.pie()
                 .value(bin => bin.freq),
         arc_skeleton = d3.arc()
@@ -214,12 +278,13 @@ function plotPieChart(domainX, domainY, bins) {
 
 
 
-    var legendG = d3.select('#chart').selectAll(".legend") // note appending it to mySvg and not svg to make positioning easier
+    var legendG = d3.select('#chart').selectAll(".legend") // note appending it to  and not svg to make positioning easier
         .data(pie(bins))
         .enter()
         .append("g")
         .attr("transform", function(d, i){
-            return "translate(" + (width - 150) + "," + (i * 16 + 25) + ")"; // place each legend on the right and bump each one down 15 pixels
+            return "translate(" + (width - 150) + "," + (i * 20 + 50) + ")";
+                // place each legend fixed distance from right and bump it down by 25 pixels on y-axis
         })
         .attr("class", "legend");
 
@@ -237,4 +302,12 @@ function plotPieChart(domainX, domainY, bins) {
         .style("font-size", 12)
         .attr("y", 10)
         .attr("x", 11);
+
+    // title
+    d3.select('svg').append('text')
+        .attr('x', width / 2 + margin)
+        .attr('y', 40)
+        .attr('text-anchor', 'middle')
+        .attr('class', 'title')
+        .text(title);
 }
