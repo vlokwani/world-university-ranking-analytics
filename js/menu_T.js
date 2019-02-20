@@ -6,7 +6,7 @@ function getMenuTemplate() {
     for(let i = 0; i < Math.min(4, len); ++i) {
         navItems.push(
             $(navItem_t).append(
-                `<a class="nav-link" href="#" data-property="${properties[i].property}">${properties[i].name}</a>`
+                `<a class="nav-link ${properties[i].active === true? 'active': ''}" href="#" data-property="${properties[i].property}">${properties[i].name}</a>`
             ));
     }
 

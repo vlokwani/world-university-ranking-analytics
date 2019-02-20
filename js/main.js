@@ -24,6 +24,11 @@ $(function() {
         d3.selectAll('.labels').remove(); // remove the labels as well which we added
         d3.select('.title').remove();
 
+        // unmark current selection as inactive
+        $('.active').removeClass('active');
+
+        $(this).addClass('active');
+
         current_property = $(this).data('property');
         properties.forEach((prop) => {
             if (current_property === prop.property) {
@@ -122,8 +127,8 @@ function loadData(property ='', x_label= '', y_label='', title = '') {
         let list = [];                  // house property data list
 
         data.forEach((d) => {
-            if (!isNaN(+d[property])) {
-                list.push(+d[property]);
+            if (!isNaN(+d[property].replace(/,/g, ''))) {
+                list.push(+d[property].replace(/,/g, ''));
             }
         });
 
@@ -278,30 +283,30 @@ function plotPieChart(domainX, domainY, bins, x_label, y_label, title) {
 
 
 
-    var legendG = d3.select('#chart').selectAll(".legend") // note appending it to  and not svg to make positioning easier
+    var legend = d3.select('#chart').selectAll(".legend") // note appending it to  and not svg to make positioning easier
         .data(pie(bins))
         .enter()
         .append("g")
         .attr("transform", function(d, i){
             return "translate(" + (width - 150) + "," + (i * 20 + 50) + ")";
-                // place each legend fixed distance from right and bump it down by 25 pixels on y-axis
+                // place each legend fixed distance from right and bump it down by 50 + 20 pixels pixels on y-axis
         })
         .attr("class", "legend");
 
-    legendG.append("rect") // make a matching color rect
+    legend.append("rect") // make a matching color rect
         .attr("width", 10)
         .attr("height", 10)
         .attr("fill", function(d, i) {
             return color(i);
         });
 
-    legendG.append("text") // add the text
+    legend.append("text") // add the text
         .text(function(bin){
             return `${bin.data.bin}`;
         })
         .style("font-size", 12)
-        .attr("y", 10)
-        .attr("x", 11);
+        .attr("y", 8)
+        .attr("x", 14);
 
     // title
     d3.select('svg').append('text')
